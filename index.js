@@ -1316,8 +1316,8 @@ client.on('interactionCreate', async (interaction) => {
                 .setCustomId('valor')
                 .setLabel('Valor do plano (ex: 75)')
                 .setStyle(TextInputStyle.Short)
-                .setPlaceholder('Digite o valor em reais')
-                .setRequired(true); // Alterado para true para simplificar
+                .setPlaceholder('Deixe em branco se for usar apenas um cupom') // Placeholder atualizado
+                .setRequired(false);
 
             const inputCupom = new TextInputBuilder()
                 .setCustomId('cupom')
@@ -1437,10 +1437,9 @@ if (interaction.isModalSubmit() && interaction.customId === 'formulario_saldo') 
         
         // Se o usuário digitou um cupom, a lógica para ali. Se ele só digitou o valor, continua aqui.
         if (!valorInputStr) {
-            // Isso não deve acontecer pois o campo é obrigatório, mas é uma segurança.
-             await interaction.editReply({ content: '❌ Você precisa informar o valor do plano.' });
-             return;
-        }
+            await interaction.editReply({ content: '❌ Você precisa preencher o valor do plano ou inserir um cupom.' });
+            return;
+       }
 
         const valorInput = parseFloat(valorInputStr);
         if (isNaN(valorInput) || valorInput <= 0) {
