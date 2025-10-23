@@ -92,7 +92,7 @@ const activePaymentChannels = new Map(); // Mapa para UserId -> ChannelId
 // Mapa para armazenar o intervalo global de verificação
 const expirationCheckInterval = new Map();
 
-// Inicialização das coleçõess
+// Inicialização das coleções
 let registeredUsers, userBalances, paymentValues, activePixChannels, expirationDates, notificationSent, paymentHistory, couponUsage;
 
 async function connectDB() {
@@ -623,7 +623,7 @@ async function checkExpirationNow(userId, expirationDate) {
     // Notificação de expiração
     if (daysLeft <= 0) {
         // --- ALTERADO ---
-        const CUSTO_PLANO_SEMANAL = 75;
+        const CUSTO_PLANO_MENSAL = 500;
     
         const balanceDoc = await userBalances.findOne({ userId });
         const saldoDisponivel = balanceDoc ? Number(balanceDoc.balance) : 0;
@@ -631,11 +631,11 @@ async function checkExpirationNow(userId, expirationDate) {
         let renewed = false;
         let renewalDetails = {};
     
-        // --- LÓGICA DE RENOVAÇÃO AUTOMÁTICA CORRIGIDA E PRIORIZADA ---
-        // Tenta renovar o plano SEMANAL
-        if (saldoDisponivel >= CUSTO_PLANO_SEMANAL) {
+        // --- LÓGICA DE RENOVAÇÃO AUTOMÁTICA ---
+        // Tenta renovar o plano MENSAL
+        if (saldoDisponivel >= CUSTO_PLANO_MENSAL) {
             renewed = true;
-            renewalDetails = { plan: 'Semanal', cost: CUSTO_PLANO_SEMANAL, duration: 7 };
+            renewalDetails = { plan: 'Mensal', cost: CUSTO_PLANO_MENSAL, duration: 30 };
         }
     
         if (renewed) {
@@ -1103,7 +1103,7 @@ client.once('clientReady', async () => {
             `Clique nos botões abaixo para começar:\n\n` +
             `📌 Como funciona?\n\nClique no botão "Ativar Assinatura" para realizar o pagamento e se tornar VIP.\n\n` +
             `⚠️ Importante!\n\nAntes de fazer qualquer pagamento, lembre-se de que não há reembolsos. \n\n` +
-            `💰 Valor\n\n**Plano Semanal:** R$ 75,00\n\n` +
+            `💰 Valor\n\n**Plano Mensal:** R$ 500,00\n\n` +
             `💡 *Se você não estiver registrado, clique em **#registrar-se** primeiro.*`
         )
         .setColor('#FFD700');
@@ -1314,7 +1314,7 @@ client.on('interactionCreate', async (interaction) => {
 
             const inputValor = new TextInputBuilder()
                 .setCustomId('valor')
-                .setLabel('Valor do plano (ex: 75)')
+                .setLabel('Valor do plano (ex: 500)')
                 .setStyle(TextInputStyle.Short)
                 .setPlaceholder('Deixe em branco se for usar apenas um cupom') // Placeholder atualizado
                 .setRequired(false);
@@ -1372,61 +1372,26 @@ if (interaction.isModalSubmit() && interaction.customId === 'formulario_saldo') 
         if (cupomInput) {
             const cupomUpper = cupomInput.toUpperCase();
             
-            /* --- LÓGICA DE INDICAÇÃO COMENTADA ---
-            const isNumericId = /^\d{17,20}$/.test(cupomInput);
-            if (isNumericId) {
-                if (cupomInput === userId) {
-                    await interaction.editReply({ content: '❌ Você não pode indicar a si mesmo.' });
-                    return;
-                }
-                const referrerMember = await guild.members.fetch(cupomInput).catch(() => null);
-                if (!referrerMember) {
-                    await interaction.editReply({ content: '❌ O ID de indicação fornecido não corresponde a um usuário válido neste servidor.' });
-                    return;
-                }
-                const referrerDoc = await registeredUsers.findOne({ userId: cupomInput });
-                if (!referrerDoc || !referrerDoc.paymentHistory || referrerDoc.paymentHistory.length === 0) {
-                    await interaction.editReply({ content: '❌ Este ID de indicação não é válido, pois o usuário ainda não é um assinante.' });
-                    return;
-                }
-                const currentUserDoc = await registeredUsers.findOne({ userId: userId });
-                if (currentUserDoc && currentUserDoc.paymentHistory && currentUserDoc.paymentHistory.length > 0) {
-                    await interaction.editReply({ content: '❌ Você não pode ser indicado, pois já é um assinante.' });
-                    return; // Impede o registro e o log
-                }
-                // VERIFICAÇÃO-CHAVE: Impede o registro duplicado.
-                const existingUser = await registeredUsers.findOne({ userId: userId });
-                if (existingUser && existingUser.referredBy) {
-                    const originalReferrer = await client.users.fetch(existingUser.referredBy).catch(() => null);
-                    const referrerTag = originalReferrer ? `<@${originalReferrer.id}>` : `o usuário com ID \`${existingUser.referredBy}\``;
-                    await interaction.editReply({ content: `❌ Você já foi indicado por ${referrerTag}. Não é possível alterar a indicação.` });
-                    return; // Para a execução, não salva e não gera log.
-                }
-                isIndicationId = true;
-                console.log(`[Indicação] Usuário ${userId} indicou o ID válido: ${cupomInput}`);
-            } else { ... }
-            */
-            
-            // --- NOVA LÓGICA DO CUPOM BASKMONEY ---
-            if (cupomUpper === 'BASKMONEY') {
-                const couponUsed = await couponUsage.findOne({ userId, coupon: 'BASKMONEY' });
+            // --- NOVA LÓGICA DO CUPOM BASKFUT ---
+            if (cupomUpper === 'BASKFUT') {
+                const couponUsed = await couponUsage.findOne({ userId, coupon: 'BASKFUT' });
                 if (couponUsed) {
-                    await interaction.editReply({ content: '❌ Você já utilizou o cupom BASKMONEY.' });
+                    await interaction.editReply({ content: '❌ Você já utilizou o cupom BASKFUT.' });
                     return;
                 }
 
                 // Adiciona o bônus ao saldo do usuário
-                const bonusValue = 37.50;
+                const bonusValue = 250;
                 await userBalances.updateOne({ userId }, { $inc: { balance: bonusValue } }, { upsert: true });
 
                 // Registra o uso do cupom
-                await couponUsage.insertOne({ userId, coupon: 'BASKMONEY', usedAt: new Date() });
+                await couponUsage.insertOne({ userId, coupon: 'BASKFUT', usedAt: new Date() });
 
                 // Loga o uso do cupom
-                await logCouponUsage('BASKMONEY', '🎟️ Cupom de Bônus Utilizado', `O usuário ativou o cupom BASKMONEY e ganhou R$ ${bonusValue.toFixed(2)} de saldo.`);
+                await logCouponUsage('BASKFUT', '🎟️ Cupom de Bônus Utilizado', `O usuário ativou o cupom BASKFUT e ganhou R$ ${bonusValue.toFixed(2)} de saldo.`);
                 
                 // Responde ao usuário e para a execução
-                await interaction.editReply({ content: `✅ Cupom **BASKMONEY** aplicado! Você ganhou **R$ ${bonusValue.toFixed(2)}** de saldo de bônus. Use o painel novamente para pagar sua assinatura com desconto!` });
+                await interaction.editReply({ content: `✅ Cupom **BASKFUT** aplicado! Você ganhou **R$ ${bonusValue.toFixed(2)}** de saldo de bônus. Use o painel novamente para pagar sua assinatura com desconto!` });
                 return;
             
             } else {
@@ -1435,11 +1400,13 @@ if (interaction.isModalSubmit() && interaction.customId === 'formulario_saldo') 
             }
         }
         
-        // Se o usuário digitou um cupom, a lógica para ali. Se ele só digitou o valor, continua aqui.
+        // Se o usuário preencheu o cupom, a lógica anterior já tratou e encerrou.
+        // Se chegou até aqui, significa que o cupom está em branco.
+        // Agora, verificamos se o valor também está em branco.
         if (!valorInputStr) {
-            await interaction.editReply({ content: '❌ Você precisa preencher o valor do plano ou inserir um cupom.' });
-            return;
-       }
+             await interaction.editReply({ content: '❌ Você precisa preencher o valor do plano ou inserir um cupom.' });
+             return;
+        }
 
         const valorInput = parseFloat(valorInputStr);
         if (isNaN(valorInput) || valorInput <= 0) {
@@ -1448,7 +1415,7 @@ if (interaction.isModalSubmit() && interaction.customId === 'formulario_saldo') 
         }
 
         // --- VALORES E LÓGICA DE PAGAMENTO SIMPLIFICADOS ---
-        const planoSemanal = 75;
+        const planoMensal = 500;
         
         let valorFinalAPagar = 0;
         let saldoUtilizado = 0;
@@ -1457,23 +1424,23 @@ if (interaction.isModalSubmit() && interaction.customId === 'formulario_saldo') 
         const balanceDoc = await userBalances.findOne({ userId });
         const saldoDisponivel = balanceDoc ? balanceDoc.balance : 0;
 
-        const valorSemanalComDesconto = Math.max(1, planoSemanal - saldoDisponivel);
+        const valorMensalComDesconto = Math.max(1, planoMensal - saldoDisponivel);
 
-        if (saldoDisponivel > 0 && valorInput === valorSemanalComDesconto) {
-            valorFinalAPagar = valorSemanalComDesconto;
-            saldoUtilizado = planoSemanal - valorFinalAPagar;
-            duration = 7;
-        } else if (valorInput === planoSemanal) {
-            valorFinalAPagar = planoSemanal;
-            duration = 7;
+        if (saldoDisponivel > 0 && valorInput === valorMensalComDesconto) {
+            valorFinalAPagar = valorMensalComDesconto;
+            saldoUtilizado = planoMensal - valorFinalAPagar;
+            duration = 30;
+        } else if (valorInput === planoMensal) {
+            valorFinalAPagar = planoMensal;
+            duration = 30;
         } else {
             let errorMessage = `❌ Valor inválido de R$ ${valorInput.toFixed(2)}.\n\n` +
                                `**Opção de Assinatura:**\n` +
-                               `- **R$ ${planoSemanal.toFixed(2)}** (VIP Semanal)`;
+                               `- **R$ ${planoMensal.toFixed(2)}** (VIP Mensal)`;
 
             if (saldoDisponivel > 0) {
                 errorMessage += `\n\n**Com seu saldo, você pode pagar:**\n` +
-                                `- **R$ ${valorSemanalComDesconto.toFixed(2)}** (VIP Semanal com desconto)`;
+                                `- **R$ ${valorMensalComDesconto.toFixed(2)}** (VIP Mensal com desconto)`;
             }
             
             await interaction.editReply({ content: errorMessage });
@@ -1695,3 +1662,4 @@ app.listen(PORT, async () => {
 git remote add origem https:
 git push -u origin main
 */
+
